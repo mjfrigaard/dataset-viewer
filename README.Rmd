@@ -1,0 +1,22 @@
+---
+title: "README - Dataset Viewer"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Motivation
+
+This application was designed to quickly assess the contents of a given dataset, and answer some "big picture" questions before you start digging into an analysis. Another reason this application exists is that I wanted to build an application with the [`golem` package](https://thinkr-open.github.io/golem/), which is covered in-depth in [Engineering Production-Grade Shiny Apps](https://engineering-shiny.org/structure.html). 
+
+```{r packages, message=FALSE, warning=FALSE}
+library(inspectdf)
+library(Lahman)
+library(visdat)
+library(listviewer)
+library(tidyverse)
+library(reactable)
+library(repurrrsive)
+```

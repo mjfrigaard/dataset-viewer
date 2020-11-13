@@ -1,0 +1,297 @@
+---
+title: "Dataset Viewer"
+author: "Martin Frigaard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(inspectdf)
+library(flexdashboard)
+library(visdat)
+library(shiny)
+library(hrbrthemes)
+library(data.table)
+library(listviewer)
+library(repurrrsive)
+library(jsonlite)
+library(htmlwidgets)
+library(reactable)
+
+# set theme
+ggplot2::theme_set(hrbrthemes::theme_ipsum_rc(
+  base_family = "Ubuntu",
+  strip_text_family = "TitilliumWeb-Regular",
+  axis_title_family = "TitilliumWeb-Regular",
+  subtitle_family = "TitilliumWeb-Regular",
+  plot_title_family = "JosefinSans-Regular"
+))
+```
+
+
+Sidebar {.sidebar}
+=====================================
+
+This dashboard allows you to upload a data set and view it's contents in a variety of ways. Scroll through each page to see what your data looks like!
+
+```{r fileInput-checkboxInput-radioButtons-radioButtons}
+shiny::fileInput(inputId = "csvfiledata",
+          label = "Upload CSV file",
+          accept = c("text/csv",
+                         "text/comma-separated-values,text/plain",
+                         ".csv"))
+
+shiny::checkboxInput(inputId = "header", label = "Header", value = TRUE)
+    
+# shiny::radioButtons(inputId = "sep", label = "Separator",
+#                    choices = c(Comma = ",",
+#                                Semicolon = ";",
+#                                Tab = "\t"),
+#                    selected = ",")
+# shiny::radioButtons(inputId = "quote", label = "Quote",
+#                    choices = c(None = "",
+#                                "Double Quote" = '"',
+#                                "Single Quote" = "'"),
+#                    selected = '"')
+```
+
+
+Your data and it's memory Usage
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+```{r dataReact1}
+dataReact1 <- reactive({
+    req(input$csvfiledata)
+        tryCatch(
+      {
+        # df <- read.csv(input$csvfiledata$datapath,
+        #          header = input$header,
+        #          sep = input$sep,
+        #          quote = input$quote)
+        
+        df <- data.table::fread(input$csvfiledata$datapath, 
+                                header = input$header, 
+                                sep = ",", 
+                                data.table = FALSE)
+        
+      },
+      error = function(e) {
+        # return a safeError if a parsing error occurs
+        stop(safeError(e))
+      }
+    )
+  })
+
+```
+
+### Your data (`reactable::reactable`)
+
+```{r render-reactable}
+renderReactable({
+   reactable(dataReact1(), wrap = FALSE, resizable = TRUE, filterable = TRUE, 
+             highlight = TRUE, height = 600)
+  })
+```
+
+### Memory usage (`inspectdf::inspect_mem`)
+
+```{r render-inspect_mem}
+shiny::renderPlot({
+  dataReact1() %>% 
+  inspectdf::inspect_mem() %>% 
+  inspectdf::show_plot(text_labels = TRUE)
+})
+```
+
+
+Missing Values
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+```{r dataReact2}
+dataReact2 <- reactive({
+    req(input$csvfiledata)
+        tryCatch(
+      {
+        # df <- read.csv(input$csvfiledata$datapath,
+        #          header = input$header,
+        #          sep = input$sep,
+        #          quote = input$quote)
+        
+        df <- data.table::fread(input$csvfiledata$datapath, 
+                                header = input$header, 
+                                sep = ",", 
+                                data.table = FALSE)
+      },
+      error = function(e) {
+        # return a safeError if a parsing error occurs
+        stop(safeError(e))
+      }
+    )
+  })
+
+```
+
+### Missing data (`inspectdf::inspect_na`)
+
+```{r render-inspect_na}
+shiny::renderPlot({
+  dataReact2() %>% 
+  inspectdf::inspect_na() %>% 
+  inspectdf::show_plot(text_labels = TRUE)
+})
+```
+
+### Missing data by type (`visdat::vis_dat`) 
+
+```{r render-vis_dat}
+shiny::renderPlot({
+  dataReact2() %>% 
+  visdat::vis_dat() + 
+  coord_flip()
+})
+```
+
+Numerical Variables
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+```{r dataReact3}
+dataReact3 <- reactive({
+    req(input$csvfiledata)
+        tryCatch(
+      {
+        # df <- read.csv(input$csvfiledata$datapath,
+        #          header = input$header,
+        #          sep = input$sep,
+        #          quote = input$quote)
+        
+        df <- data.table::fread(input$csvfiledata$datapath, 
+                                header = input$header, 
+                                sep = ",", 
+                                data.table = FALSE)
+        # numeric only
+        df <- df %>% select_if(is.numeric)
+      },
+      error = function(e) {
+        # return a safeError if a parsing error occurs
+        stop(safeError(e))
+      }
+    )
+  })
+```
+
+
+### Numerical variables (`inspectdf::inspect_num`)
+
+```{r render-num_plot}
+shiny::renderPlot({
+  dataReact3() %>% 
+  inspectdf::inspect_num() %>% 
+  inspectdf::show_plot(text_labels = TRUE)
+})
+```
+
+### Correlations (`inspectdf::inspect_cor`) 
+
+```{r render-cor_plot}
+shiny::renderPlot({
+  dataReact3() %>% 
+  inspectdf::inspect_cor() %>% 
+  inspectdf::show_plot(text_labels = TRUE)
+})
+```
+
+
+Categorical Variables
+=======================================================================
+
+
+Row
+-----------------------------------------------------------------------
+
+```{r dataReact4}
+dataReact4 <- reactive({
+    req(input$csvfiledata)
+  
+    tryCatch(
+      {
+        # df <- read.csv(input$csvfiledata$datapath,
+        #          header = input$header,
+        #          sep = input$sep,
+        #          quote = input$quote)
+        
+        df <- data.table::fread(input$csvfiledata$datapath, 
+                                header = input$header, 
+                                sep = ",", 
+                                data.table = FALSE)
+        # character vars 
+        
+        df <- df %>% 
+          dplyr::select_if(is.character)
+      },
+      error = function(e) {
+        # return a safeError if a parsing error occurs
+        stop(safeError(e))
+      }
+    )
+    
+  })
+```
+
+### Categorical variables (`inspectdf::inspect_cat`)
+
+```{r render-cat_plot}
+shiny::renderPlot({
+  dataReact4() %>% 
+  inspectdf::inspect_cat() %>% 
+  inspectdf::show_plot(text_labels = TRUE)
+})
+```
+
+
+### Imbalances  (`inspectdf::inspect_imb`)
+
+```{r render-imb_plot}
+shiny::renderPlot({
+  dataReact4() %>% 
+  inspectdf::inspect_imb() %>% 
+  inspectdf::show_plot(text_labels = TRUE)
+})
+```
+
+
+View lists!
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### View JSON data  (`listviewer::jsonedit`)
+
+
+```{r json}
+# https://github.com/timelyportfolio/listviewer/issues/26
+# 
+
+json <- jsonlite::fromJSON(got_chars_json(), simplifyDataFrame = FALSE)
+renderJsonedit({
+    listviewer::jsonedit(as.list(json)
+      ,"change" = htmlwidgets::JS('function(){
+        console.log( event.currentTarget.parentNode.editor.get() )
+      }')
+    )
+})
+```
+
