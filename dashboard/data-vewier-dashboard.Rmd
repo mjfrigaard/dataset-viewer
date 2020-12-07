@@ -21,8 +21,9 @@ library(repurrrsive)
 library(jsonlite)
 library(htmlwidgets)
 library(reactable)
+library(DT)
 
-# set theme
+# set theme for graphs from hrbrthemes
 ggplot2::theme_set(hrbrthemes::theme_ipsum_rc(
   base_family = "Ubuntu",
   strip_text_family = "TitilliumWeb-Regular",
@@ -46,7 +47,6 @@ shiny::fileInput(inputId = "csvfiledata",
                          ".csv"))
 
 shiny::checkboxInput(inputId = "header", label = "Header", value = TRUE)
-    
 # shiny::radioButtons(inputId = "sep", label = "Separator",
 #                    choices = c(Comma = ",",
 #                                Semicolon = ";",
@@ -68,7 +68,9 @@ Row
 
 ```{r dataReact1}
 dataReact1 <- reactive({
+  
     req(input$csvfiledata)
+  
         tryCatch(
       {
         # df <- read.csv(input$csvfiledata$datapath,
@@ -82,11 +84,17 @@ dataReact1 <- reactive({
                                 data.table = FALSE)
         
       },
+      
       error = function(e) {
+        
         # return a safeError if a parsing error occurs
+        
         stop(safeError(e))
+        
       }
+      
     )
+  
   })
 
 ```
@@ -293,5 +301,37 @@ renderJsonedit({
       }')
     )
 })
+```
+
+
+Sample data
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+```{r downloadButton, message=FALSE, warning=FALSE}
+# reactable::reactableOutput()
+# reactable::renderReactable()
+
+splitLayout(cellWidths = c("30%", "70%"),
+            wellPanel(
+              downloadButton(outputId = "downloadData", 
+               label = "Download a sample data:")),
+              reactableOutput("OrigData"))
+
+output$downloadData <- downloadHandler(
+    filename = function() {
+      paste("Sample", "Data", "Set", ".csv", sep = "")
+    },
+    content = function(file) {
+      file.copy("SampleDataSet.csv", file)
+    },
+    contentType = "text/csv"
+)
+# read in the dataset
+SampleDataSet <- readr::read_csv(file = "SampleDataSet.csv")
+
+output$OrigData <- renderReactable(SampleDataSet)
 ```
 
