@@ -1,0 +1,1 @@
+Below is a sample .csv data table from the Lahman baseball database. These data come from the [People](https://cran.r-project.org/web/packages/Lahman/Lahman.pdf) table. Read more about this dataset [here](http://www.seanlahman.com/files/database/readme2017.txt).

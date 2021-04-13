@@ -1,10 +1,9 @@
 ---
-title: "Dataset Viewer"
+title: "CSViewer"
 author: "Martin Frigaard"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: rows
-    
+
 runtime: shiny
 ---
 
@@ -22,6 +21,7 @@ library(jsonlite)
 library(htmlwidgets)
 library(reactable)
 library(DT)
+library(polished)
 
 # set theme for graphs from hrbrthemes
 ggplot2::theme_set(hrbrthemes::theme_ipsum_rc(
@@ -37,7 +37,9 @@ ggplot2::theme_set(hrbrthemes::theme_ipsum_rc(
 Sidebar {.sidebar}
 =====================================
 
-This dashboard allows you to upload a data set and view it's contents in a variety of ways. Scroll through each page to see what your data looks like!
+This dashboard allows you to upload a .csv data set and view it's contents in a variety of ways. 
+
+Scroll through each page to see what your data looks like!
 
 ```{r fileInput-checkboxInput-radioButtons-radioButtons}
 shiny::fileInput(inputId = "csvfiledata",
@@ -47,20 +49,28 @@ shiny::fileInput(inputId = "csvfiledata",
                          ".csv"))
 
 shiny::checkboxInput(inputId = "header", label = "Header", value = TRUE)
-# shiny::radioButtons(inputId = "sep", label = "Separator",
-#                    choices = c(Comma = ",",
-#                                Semicolon = ";",
-#                                Tab = "\t"),
-#                    selected = ",")
-# shiny::radioButtons(inputId = "quote", label = "Quote",
-#                    choices = c(None = "",
-#                                "Double Quote" = '"',
-#                                "Single Quote" = "'"),
-#                    selected = '"')
 ```
 
+Read more: 
 
-Your data and it's memory Usage
+1. [`reactable`](https://glin.github.io/reactable/) 
+2. [`inspectdf`](https://alastairrushworth.github.io/inspectdf/) 
+3. [`flexdashboard`](https://rmarkdown.rstudio.com/flexdashboard/)
+4. [`listviewer`](https://github.com/timelyportfolio/listviewer)
+
+Your data {data-orientation=rows}
+=======================================================================
+
+### View your data in a table (`reactable::reactable`)
+
+```{r render-reactable}
+renderReactable({
+   reactable(dataReact1(), wrap = FALSE, resizable = TRUE, filterable = TRUE, 
+             highlight = TRUE, height = 600)
+  })
+```
+
+Memory Usage {data-orientation=rows}
 =======================================================================
 
 Row
@@ -73,10 +83,6 @@ dataReact1 <- reactive({
   
         tryCatch(
       {
-        # df <- read.csv(input$csvfiledata$datapath,
-        #          header = input$header,
-        #          sep = input$sep,
-        #          quote = input$quote)
         
         df <- data.table::fread(input$csvfiledata$datapath, 
                                 header = input$header, 
@@ -99,15 +105,6 @@ dataReact1 <- reactive({
 
 ```
 
-### Your data (`reactable::reactable`)
-
-```{r render-reactable}
-renderReactable({
-   reactable(dataReact1(), wrap = FALSE, resizable = TRUE, filterable = TRUE, 
-             highlight = TRUE, height = 600)
-  })
-```
-
 ### Memory usage (`inspectdf::inspect_mem`)
 
 ```{r render-inspect_mem}
@@ -119,7 +116,7 @@ shiny::renderPlot({
 ```
 
 
-Missing Values
+Missing Values {data-orientation=rows}
 =======================================================================
 
 Row
@@ -130,10 +127,6 @@ dataReact2 <- reactive({
     req(input$csvfiledata)
         tryCatch(
       {
-        # df <- read.csv(input$csvfiledata$datapath,
-        #          header = input$header,
-        #          sep = input$sep,
-        #          quote = input$quote)
         
         df <- data.table::fread(input$csvfiledata$datapath, 
                                 header = input$header, 
@@ -169,7 +162,7 @@ shiny::renderPlot({
 })
 ```
 
-Numerical Variables
+Numerical Variables {data-orientation=rows}
 =======================================================================
 
 Row
@@ -180,10 +173,6 @@ dataReact3 <- reactive({
     req(input$csvfiledata)
         tryCatch(
       {
-        # df <- read.csv(input$csvfiledata$datapath,
-        #          header = input$header,
-        #          sep = input$sep,
-        #          quote = input$quote)
         
         df <- data.table::fread(input$csvfiledata$datapath, 
                                 header = input$header, 
@@ -211,6 +200,13 @@ shiny::renderPlot({
 })
 ```
 
+
+Correlations {data-orientation=rows}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
 ### Correlations (`inspectdf::inspect_cor`) 
 
 ```{r render-cor_plot}
@@ -222,7 +218,7 @@ shiny::renderPlot({
 ```
 
 
-Categorical Variables
+Categorical Variables {data-orientation=rows}
 =======================================================================
 
 
@@ -235,10 +231,6 @@ dataReact4 <- reactive({
   
     tryCatch(
       {
-        # df <- read.csv(input$csvfiledata$datapath,
-        #          header = input$header,
-        #          sep = input$sep,
-        #          quote = input$quote)
         
         df <- data.table::fread(input$csvfiledata$datapath, 
                                 header = input$header, 
@@ -268,8 +260,14 @@ shiny::renderPlot({
 })
 ```
 
+Imbalances {data-orientation=rows}
+=======================================================================
 
-### Imbalances  (`inspectdf::inspect_imb`)
+
+Row
+-----------------------------------------------------------------------
+
+### Imbalances between categories  (`inspectdf::inspect_imb`)
 
 ```{r render-imb_plot}
 shiny::renderPlot({
@@ -280,41 +278,21 @@ shiny::renderPlot({
 ```
 
 
-View lists!
+Sample data {data-orientation=rows}
 =======================================================================
 
-Row
+Row {data-height=100}
 -----------------------------------------------------------------------
 
-### View JSON data  (`listviewer::jsonedit`)
-
-
-```{r json}
-# https://github.com/timelyportfolio/listviewer/issues/26
-# 
-
-json <- jsonlite::fromJSON(got_chars_json(), simplifyDataFrame = FALSE)
-renderJsonedit({
-    listviewer::jsonedit(as.list(json)
-      ,"change" = htmlwidgets::JS('function(){
-        console.log( event.currentTarget.parentNode.editor.get() )
-      }')
-    )
-})
+```{r includeMarkdown}
+shiny::includeMarkdown(path = "sampledatainfo.md")
 ```
 
-
-Sample data
-=======================================================================
-
-Row
+Row {data-height=900}
 -----------------------------------------------------------------------
 
 ```{r downloadButton, message=FALSE, warning=FALSE}
-# reactable::reactableOutput()
-# reactable::renderReactable()
-
-splitLayout(cellWidths = c("30%", "70%"),
+splitLayout(cellWidths = c("22%", "78%"),
             wellPanel(
               downloadButton(outputId = "downloadData", 
                label = "Download a sample data:")),
@@ -332,6 +310,31 @@ output$downloadData <- downloadHandler(
 # read in the dataset
 SampleDataSet <- readr::read_csv(file = "SampleDataSet.csv")
 
-output$OrigData <- renderReactable(SampleDataSet)
+output$OrigData <- renderReactable({
+    reactable(SampleDataSet, 
+              resizable = TRUE, showPageSizeOptions = TRUE, 
+              selection = "multiple", onClick = "select")
+  })
+```
+
+BONUS: View lists! {data-orientation=rows}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### View JSON data  (`listviewer::jsonedit`)
+
+
+```{r json}
+# https://github.com/timelyportfolio/listviewer/issues/26
+json <- jsonlite::fromJSON(got_chars_json(), simplifyDataFrame = FALSE)
+renderJsonedit({
+    listviewer::jsonedit(as.list(json)
+      ,"change" = htmlwidgets::JS('function(){
+        console.log( event.currentTarget.parentNode.editor.get() )
+      }')
+    )
+})
 ```
 

@@ -1,0 +1,13 @@
+name: csviewer-dashboard
+title: csviewer-dashboard
+username:
+account: mjfrigaard
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3958561
+bundleId: 4467615
+url: https://mjfrigaard.shinyapps.io/csviewer-dashboard/
+when: 1618350478.40104
+lastSyncTime: 1618350478.40105
+asMultiple: FALSE
+asStatic: FALSE
